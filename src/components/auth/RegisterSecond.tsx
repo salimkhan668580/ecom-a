@@ -47,7 +47,7 @@ export default function RegisterSecond() {
             onPress={() => navigation.navigate("Landing")}
             className="w-full h-12 bg-primary rounded-md items-center justify-center"
           >
-            <Text className="text-white text-base font-semibold">Next</Text>
+            <Text className="text-white text-base font-semibold">Register</Text>
           </TouchableOpacity>
 
           <View className="flex items-end my-6 justify-end">

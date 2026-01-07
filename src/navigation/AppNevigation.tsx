@@ -5,12 +5,20 @@ import LandingPage from "../components/auth/LandingPage";
 import LoginPage from "../components/auth/LoginPage";
 import RegisterPage from "../components/auth/RegisterPage";
 import RegisterSecond from "../components/auth/RegisterSecond";
+import TabNavigator from "./MainTabs";
+import OrderList from "../components/profile/Order/OrderList";
+import OrderDetails from "../components/profile/Order/OrderDetails";
+import ProductDetails from "../components/Home/product/ProductDetails";
 
 export type RootStackParamList = {
   Landing: undefined;
   Login: undefined;
   Register: undefined;
   RegisterSecond: undefined;
+  MainTabs: undefined;
+  OrderList: undefined;
+  OrderDetails: { orderId: string };
+  ProductDetails: { productId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -29,6 +37,10 @@ export default function AppNavigation() {
         <Stack.Screen name="Login" component={LoginPage} />
         <Stack.Screen name="Register" component={RegisterPage} />
         <Stack.Screen name="RegisterSecond" component={RegisterSecond} />
+        <Stack.Screen name="MainTabs" component={TabNavigator} options={{ headerShown: false }} />
+        <Stack.Screen name="OrderList" component={OrderList} />
+        <Stack.Screen name="OrderDetails" component={OrderDetails} />
+        <Stack.Screen name="ProductDetails" component={ProductDetails} /> 
      
         </Stack.Navigator>
     </NavigationContainer>

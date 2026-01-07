@@ -3,6 +3,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, TextInput, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RootStackParamList } from "../../navigation/AppNevigation";
+import Toast from "react-native-toast-message";
 
 export default function LoginPage() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -28,7 +29,13 @@ export default function LoginPage() {
             <Text className=" text-primary text-center text-sm">Forgot Password?</Text>
           </View>
           <TouchableOpacity
-            onPress={() => navigation.navigate("Register")}
+            onPress={() => {
+              navigation.navigate("MainTabs");
+              Toast.show({
+                type: "success",
+                text1: "Login successful!",
+              });
+            }}
             className="w-full h-12 bg-primary rounded-md items-center justify-center"
           >
             <Text className="text-white text-base font-semibold">Login</Text>
