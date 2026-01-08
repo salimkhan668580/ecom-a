@@ -9,6 +9,9 @@ import TabNavigator from "./MainTabs";
 import OrderList from "../components/profile/Order/OrderList";
 import OrderDetails from "../components/profile/Order/OrderDetails";
 import ProductDetails from "../components/Home/product/ProductDetails";
+import Wishlist from "../components/Wishlist/Wishlist";
+import AboutUs from "../components/aboutUs/AboutUs";
+import HelpSupport from "../components/HelpSupport/HelpSupport";
 
 export type RootStackParamList = {
   Landing: undefined;
@@ -19,6 +22,9 @@ export type RootStackParamList = {
   OrderList: undefined;
   OrderDetails: { orderId: string };
   ProductDetails: { productId: string };
+  Wishlist: undefined;
+  AboutUs: undefined;
+  HelpSupport: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -41,7 +47,9 @@ export default function AppNavigation() {
         <Stack.Screen name="OrderList" component={OrderList} />
         <Stack.Screen name="OrderDetails" component={OrderDetails} />
         <Stack.Screen name="ProductDetails" component={ProductDetails} /> 
-     
+        <Stack.Screen name="Wishlist" component={Wishlist} />
+        <Stack.Screen name="AboutUs" component={AboutUs} />
+        <Stack.Screen name="HelpSupport" component={HelpSupport} />
         </Stack.Navigator>
     </NavigationContainer>
   );

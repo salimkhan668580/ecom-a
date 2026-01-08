@@ -19,7 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 // Mock products data
-const products = [
+export const products = [
   {
     id: "1",
     title: "Wireless Bluetooth Headphones",

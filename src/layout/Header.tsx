@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Entypo, FontAwesome6 } from "@expo/vector-icons";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/AppNevigation";
+import LogoutModal from "../components/auth/LogoutModal";
 
 type HeaderProps = {
   title: string;
@@ -26,6 +27,7 @@ export default function Header({
   onNotificationPress,
   rightAction,
 }: HeaderProps) {
+  const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -33,12 +35,12 @@ export default function Header({
   const menuItems = [
     { icon: "user", name: "My Account", screen: "Profile" },
     { icon: "box", name: "My Orders", screen: "OrderList" },
-    { icon: "heart", name: "Wishlist", screen: null },
+    { icon: "heart", name: "Wishlist", screen: "Wishlist" },
     { icon: "gift", name: "Rewards", screen: null },
     { icon: "gear", name: "Settings", screen: "Settings" },
-    { icon: "question-circle", name: "Help & Support", screen: null },
-    { icon: "circle-info", name: "About Us", screen: null },
-    { icon: "arrow-right-from-bracket", name: "Logout", screen: null, isLogout: true },
+    { icon: "question-circle", name: "Help & Support", screen: "HelpSupport" },
+    { icon: "circle-info", name: "About Us", screen: "AboutUs" },
+    { icon: "arrow-right-from-bracket", name: "Logout", screen: null, isLogout: true},
   ];
 
   return (
@@ -137,6 +139,7 @@ export default function Header({
                   onPress={() => {
                     if (item.isLogout) {
                       // Handle logout
+                      setIsLogoutModalVisible(true);
                       setIsMenuOpen(false);
                     } else if (item.screen) {
                       navigation.navigate(item.screen as any);
@@ -171,6 +174,11 @@ export default function Header({
           </ScrollView>
         </View>
       )}
+
+     {
+      isLogoutModalVisible && (
+        <LogoutModal visible={isLogoutModalVisible} onClose={() => setIsLogoutModalVisible(false)} />
+     )}
     </>
   );
 }
