@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp, NavigationProp } from "@react-navigation/native";
 import { Entypo } from "@expo/vector-icons";
-import { RootStackParamList } from "../../../navigation/AppNevigation";
+import { RootStackParamList } from "../navigation/AppNevigation";
 import { LinearGradient } from "expo-linear-gradient";
 
 type OrderDetailsRouteProp = RouteProp<RootStackParamList, "OrderDetails">;

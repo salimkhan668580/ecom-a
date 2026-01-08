@@ -10,7 +10,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Entypo } from "@expo/vector-icons";
+import { useNavigation, NavigationProp } from "@react-navigation/native";
+import { RootStackParamList } from "../../navigation/AppNevigation";
 import Header from "../../layout/Header";
+import DetailsHeader from "../../layout/DetailsHeader";
 
 // Mock cart items
 const initialCartItems = [
@@ -39,6 +42,7 @@ const initialCartItems = [
 
 export default function CartScreen() {
   const [cartItems, setCartItems] = useState(initialCartItems);
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const updateQuantity = (id: string, change: number) => {
     setCartItems((items) =>
@@ -68,14 +72,14 @@ export default function CartScreen() {
   const total = subtotal + shipping;
 
   const handleCheckout = () => {
-    // TODO: Navigate to checkout screen
-    console.log("Checkout pressed");
+    // Navigate to payment success screen
+    navigation.navigate("PaymentSuccess");
   };
 
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <Header
+        <DetailsHeader
           title="Shopping Cart"
           subtitle={`${cartItems.length} ${cartItems.length === 1 ? "item" : "items"} in your cart`}
         />

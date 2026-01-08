@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Linking } from "react-native";
-import ScreenLayout from "../../layout/ScreenLayout";
+
 import { FontAwesome6 } from "@expo/vector-icons";
+import DetailsHeader from "../../layout/DetailsHeader";
 
 export default function HelpSupport() {
   const handleEmailPress = () => {
@@ -40,8 +41,12 @@ export default function HelpSupport() {
   ];
 
   return (
-    <ScreenLayout title="Help & Support" showBackButton>
-      <View className="px-6 pb-6">
+    // <ScreenLayout title="Help & Support" showBackButton scrollable={false}>
+    <View className="flex-1 bg-background py-10">
+
+          <DetailsHeader title="Help & Support" subtitle="We're here to assist you with any questions" />
+    <View className="px-6 pb-6">
+
         {/* Header Section */}
         <View className="items-center mb-6">
           <View className="w-20 h-20 rounded-full bg-primary/20 items-center justify-center mb-4">
@@ -161,6 +166,7 @@ export default function HelpSupport() {
           </View>
         </View>
       </View>
-    </ScreenLayout>
+    </View>
+    // </ScreenLayout>
   );
 }

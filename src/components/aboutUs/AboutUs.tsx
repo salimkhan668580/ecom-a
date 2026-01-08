@@ -1,11 +1,15 @@
 import React from "react";
 import { View, Text, Image } from "react-native";
-import ScreenLayout from "../../layout/ScreenLayout";
+
 import { FontAwesome6 } from "@expo/vector-icons";
+import DetailsHeader from "../../layout/DetailsHeader";
 
 export default function AboutUs() {
   return (
-    <ScreenLayout title="About Us" showBackButton>
+    // <ScreenLayout title="About Us" showBackButton>
+    <View className="flex-1 bg-background py-10">
+
+        <DetailsHeader title="About Us" subtitle="Your trusted shopping destination" />
       <View className="px-6 pb-6">
         {/* Logo Section */}
         <View className="items-center mb-6">
@@ -127,6 +131,7 @@ export default function AboutUs() {
           </Text>
         </View>
       </View>
-    </ScreenLayout>
+    </View>
+    // </ScreenLayout>
   );
 }

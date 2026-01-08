@@ -13,6 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Entypo } from "@expo/vector-icons";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { RootStackParamList } from "../../navigation/AppNevigation";
+import DetailsHeader from "../../layout/DetailsHeader";
 
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -63,6 +64,7 @@ export default function ProfileScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header */}
+        <DetailsHeader title="My Account" subtitle="Manage your account and preferences" />
         <View className="px-6 pt-6 pb-4">
           <View className="flex-row items-center mb-2">
             <View className="w-16 h-16 rounded-full bg-primary/20 items-center justify-center mr-4">
@@ -303,7 +305,7 @@ export default function ProfileScreen() {
                       style={styles.gradientButton}
                     >
                       <Text className="text-white text-base font-semibold">
-                        Update Password
+                        Update
                       </Text>
                     </LinearGradient>
                   </TouchableOpacity>
@@ -335,6 +337,31 @@ export default function ProfileScreen() {
                   </Text>
                   <Text className="text-secondary-text text-sm">
                     View and track your orders
+                  </Text>
+                </View>
+              </View>
+              <Entypo name="chevron-right" size={20} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View className="px-6 mb-6">
+          <View className="bg-white rounded-xl p-4 shadow-sm">
+            <TouchableOpacity
+              onPress={() => navigation.navigate("DeliveryAddress")}
+              className="flex-row items-center justify-between"
+              activeOpacity={0.7}
+            >
+              <View className="flex-row items-center flex-1">
+                <View className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center mr-3">
+                  <Entypo name="location" size={20} color="#7C3AED" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-normal-text text-base font-semibold">
+                    Delivery Address
+                  </Text>
+                  <Text className="text-secondary-text text-sm">
+                    Manage your delivery addresses
                   </Text>
                 </View>
               </View>

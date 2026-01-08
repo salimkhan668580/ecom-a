@@ -8,7 +8,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { Entypo } from "@expo/vector-icons";
-import { RootStackParamList } from "../../../navigation/AppNevigation";
+import { RootStackParamList } from "../navigation/AppNevigation";
 
 // Mock order data
 const mockOrders = [

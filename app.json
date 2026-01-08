@@ -9,6 +9,7 @@
       "bundler": "metro"
     },
 
+
     "experiments": {
       "tsconfigPaths": true
     },
@@ -30,10 +31,10 @@
       "supportsTablet": true
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
-    }
+  "adaptiveIcon": {
+    "foregroundImage": "./assets/logo.png",
+    "backgroundColor": "#7C3AED"  // Change this to match your brand color
+  }
+}
   }
 }

@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { View, TouchableOpacity, Image, Text, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Entypo, FontAwesome6 } from "@expo/vector-icons";
-import { useNavigation, NavigationProp } from "@react-navigation/native";
+import { useNavigation, NavigationProp, useFocusEffect } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/AppNevigation";
 import LogoutModal from "../components/auth/LogoutModal";
+import { useMenu } from "../context/MenuContext";
 
 type HeaderProps = {
   title: string;
@@ -28,16 +29,26 @@ export default function Header({
   rightAction,
 }: HeaderProps) {
   const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isMenuOpen, setIsMenuOpen } = useMenu();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
+  // Close menu when screen loses focus (navigating away)
+  useFocusEffect(
+    React.useCallback(() => {
+      // Cleanup: close menu when screen is unfocused (navigating away)
+      return () => {
+        setIsMenuOpen(false);
+      };
+    }, [setIsMenuOpen])
+  );
+
   const menuItems = [
-    { icon: "user", name: "My Account", screen: "Profile" },
+    { icon: "user", name: "My Account", screen: "MainTabs", params: { screen: "Profile" } },
     { icon: "box", name: "My Orders", screen: "OrderList" },
     { icon: "heart", name: "Wishlist", screen: "Wishlist" },
-    { icon: "gift", name: "Rewards", screen: null },
-    { icon: "gear", name: "Settings", screen: "Settings" },
+    { icon: "gift", name: "Rewards", screen: "RewardCoupon" },
+    { icon: "gear", name: "Settings", screen: "MainTabs", params: { screen: "Settings" } },
     { icon: "question-circle", name: "Help & Support", screen: "HelpSupport" },
     { icon: "circle-info", name: "About Us", screen: "AboutUs" },
     { icon: "arrow-right-from-bracket", name: "Logout", screen: null, isLogout: true},
@@ -142,7 +153,12 @@ export default function Header({
                       setIsLogoutModalVisible(true);
                       setIsMenuOpen(false);
                     } else if (item.screen) {
-                      navigation.navigate(item.screen as any);
+                      // Navigate but keep menu open
+                      if (item.params) {
+                        navigation.navigate(item.screen as any, item.params as any);
+                      } else {
+                        navigation.navigate(item.screen as any);
+                      }
                       setIsMenuOpen(false);
                     } else {
                       setIsMenuOpen(false);

@@ -56,24 +56,15 @@ export default function LogoutModal({ visible, onClose }: { visible: boolean; on
             >
               <Text className="text-normal-text text-base font-semibold">Cancel</Text>
             </TouchableOpacity>
-
             <TouchableOpacity
               onPress={handleLogout}
-              activeOpacity={0.8}
-              style={styles.buttonContainer}
-              className="flex-1 border-2"
+              className="flex-1 h-12 rounded-xl border-2 border-gray-300 items-center bg-[#EF4444] justify-center"
+              activeOpacity={0.7}
             >
-              <LinearGradient
-                colors={["#7C3AED", "#EC4899"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.gradientButton}
-              >
-                <Text className="text-white text-base font-semibold" >
-                  Logout
-                </Text>
-              </LinearGradient>
+              <Text className="text-white text-base font-semibold">Logout</Text>
             </TouchableOpacity>
+
+        
      
           </View>
         </View>
