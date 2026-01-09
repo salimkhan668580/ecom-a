@@ -26,7 +26,9 @@ export default function LoginPage() {
             className="w-full h-14 border-2 border-gray-300 bg-white rounded-md px-3 "
           />
             <View className="flex items-end my-4 justify-end">
-            <Text className=" text-primary text-center text-sm">Forgot Password?</Text>
+            <TouchableOpacity onPress={() => navigation.navigate("ForgetPassword")}>
+              <Text className=" text-primary text-center text-sm">Forgot Password?</Text>
+            </TouchableOpacity>
           </View>
           <TouchableOpacity
             onPress={() => {

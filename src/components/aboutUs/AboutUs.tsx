@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Image } from "react-native";
+import { View, Text, Image, ScrollView } from "react-native";
 
 import { FontAwesome6 } from "@expo/vector-icons";
 import DetailsHeader from "../../layout/DetailsHeader";
@@ -7,7 +7,11 @@ import DetailsHeader from "../../layout/DetailsHeader";
 export default function AboutUs() {
   return (
     // <ScreenLayout title="About Us" showBackButton>
-    <View className="flex-1 bg-background py-10">
+    <ScrollView
+      className="flex-1 bg-background py-10"
+      showsVerticalScrollIndicator={false}
+    >
+    <View className="">
 
         <DetailsHeader title="About Us" subtitle="Your trusted shopping destination" />
       <View className="px-6 pb-6">
@@ -132,6 +136,6 @@ export default function AboutUs() {
         </View>
       </View>
     </View>
-    // </ScreenLayout>
+    </ScrollView>
   );
 }

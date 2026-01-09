@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View, ScrollView } from "react-native";
 import ProductCard from "../Home/product/ProductCard";
 import { products } from "../Home/HomeScreen";
 import { NavigationProp ,useNavigation} from "@react-navigation/native";
@@ -10,7 +10,7 @@ export default function Wishlist() {
 
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   return (
-    <View className="flex-1 pt-14 bg-background"> 
+    <ScrollView className="flex-1 bg-background py-10" showsVerticalScrollIndicator={false}> 
       <View className="px-6 pt-6 pb-4">
           <View className="flex-row items-center mb-2">
             <TouchableOpacity
@@ -38,6 +38,6 @@ export default function Wishlist() {
                 ))}
             </View>
         </View>
-    </View>
+    </ScrollView>
   );
 }

@@ -5,6 +5,7 @@ import LandingPage from "../components/auth/LandingPage";
 import LoginPage from "../components/auth/LoginPage";
 import RegisterPage from "../components/auth/RegisterPage";
 import RegisterSecond from "../components/auth/RegisterSecond";
+import ForgetPassword from "../components/auth/ForgetPassword";
 import TabNavigator, { TabParamList } from "./MainTabs";
 import OrderList from "../Order/OrderList";
 import OrderDetails from "../Order/OrderDetails";
@@ -21,6 +22,7 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   RegisterSecond: undefined;
+  ForgetPassword: undefined;
   MainTabs: { screen?: keyof TabParamList } | undefined;
   OrderList: undefined;
   OrderDetails: { orderId: string };
@@ -49,6 +51,7 @@ export default function AppNavigation() {
         <Stack.Screen name="Login" component={LoginPage} />
         <Stack.Screen name="Register" component={RegisterPage} />
         <Stack.Screen name="RegisterSecond" component={RegisterSecond} />
+        <Stack.Screen name="ForgetPassword" component={ForgetPassword} />
         <Stack.Screen name="MainTabs" component={TabNavigator} options={{ headerShown: false }} />
         <Stack.Screen name="OrderList" component={OrderList} />
         <Stack.Screen name="OrderDetails" component={OrderDetails} />
