@@ -19,6 +19,12 @@ class AuthService {
             const response = await axiosInstance.post(`/user/forget`, { email, newPassword, confirmPassword });
         return response.data;
     }
+        async registerApi({name,email,gender,phone,role,password,address,dateOfBirth}:{name: string, email: string, gender: string, phone: string, role: string, password: string, address: string, dateOfBirth: string}) {
+            const response = await axiosInstance.post(`/user/register`, { name, email, gender, phone, role, password, address, dateOfBirth });
+        return response.data;
+    }
+
+
 
 }
 

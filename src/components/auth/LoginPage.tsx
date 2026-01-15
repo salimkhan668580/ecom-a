@@ -1,6 +1,6 @@
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, TextInput, Image } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Image, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RootStackParamList } from "../../navigation/AppNevigation";
 import Toast from "react-native-toast-message";
@@ -9,9 +9,7 @@ import AuthService from "../../services/auth";
 import { LoginData, loginSchema } from "../../schema/AuthSchema";
 import Entypo from '@expo/vector-icons/Entypo';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-
-
+import { AxiosError } from "axios";
 
 
 export default function LoginPage() {
@@ -45,12 +43,20 @@ export default function LoginPage() {
         routes: [{ name: "MainTabs" }],
       });
     },
-    onError: (error) => {
-      console.log("Login failed! with error", error?.message ?? "Login failed!");
-      Toast.show({
-        type: "error",
-        text1: error?.message ?? "Login failed!",
-      });
+    onError: (error:unknown) => {
+      if (error instanceof AxiosError) {
+        Toast.show({
+          type: "error",
+          text1: error.response?.data?.message ?? "Something went wrong",
+        });
+      }
+      else {
+        console.log(error);
+        Toast.show({
+          type: "error",
+          text1: "Something went wrong",
+        });
+      }
     },
   });
 
@@ -128,7 +134,7 @@ export default function LoginPage() {
             disabled={loginMutation.isPending}
           >
             <Text className="text-white text-base font-semibold">
-              {loginMutation.isPending ? "Logging in..." : "Login"}
+              {loginMutation.isPending ? <ActivityIndicator size="small" color="white" /> : "Login"}
             </Text>
           </TouchableOpacity>
 

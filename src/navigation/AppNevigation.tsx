@@ -16,12 +16,13 @@ import HelpSupport from "../components/HelpSupport/HelpSupport";
 import PaymentSuccess from "../components/Payment/PaymentSuccess";
 import RewardCoupon from "../components/RewardCoupon/RewardCoupon";
 import DeliveryAddress from "../components/deliveryAddress/DeliveryAddress";
+import { CreateUserData } from "../schema/AuthSchema";
 
 export type RootStackParamList = {
   Landing: undefined;
   Login: undefined;
   Register: undefined;
-  RegisterSecond: undefined;
+  RegisterSecond: { values: CreateUserData };
   ForgetPassword: undefined;
   MainTabs: { screen?: keyof TabParamList } | undefined;
   OrderList: undefined;
