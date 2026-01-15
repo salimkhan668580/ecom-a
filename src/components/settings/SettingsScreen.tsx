@@ -10,8 +10,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Entypo, FontAwesome6 } from "@expo/vector-icons";
 import DetailsHeader from "../../layout/DetailsHeader";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
 
 export default function SettingsScreen() {
+  const navigation = useNavigation();
   // Notification settings
   const [notifications, setNotifications] = useState({
     pushNotifications: true,
@@ -85,7 +88,13 @@ export default function SettingsScreen() {
         {
           text: "Logout",
           style: "destructive",
-          onPress: () => Alert.alert("Success", "Logged out successfully"),
+          onPress: () => {
+            AsyncStorage.removeItem("token");
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Login" as never }],
+            });
+          },
         },
       ]
     );
