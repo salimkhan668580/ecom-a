@@ -10,6 +10,7 @@ import { LoginData, loginSchema } from "../../schema/AuthSchema";
 import Entypo from '@expo/vector-icons/Entypo';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AxiosError } from "axios";
+import { useUser } from "../../context/UserContext";
 
 
 export default function LoginPage() {
@@ -27,7 +28,7 @@ export default function LoginPage() {
   };
 
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-
+  const { setUser } = useUser();
   const loginMutation = useMutation({
     mutationFn: (loginData: LoginData) =>AuthService.login(loginData.email, loginData.password),
     onSuccess: (result) => {
@@ -37,6 +38,7 @@ export default function LoginPage() {
       });
      
       AsyncStorage.setItem("token", result?.token);
+      setUser(result?.user);
       // Reset navigation stack to prevent going back to login
       navigation.reset({
         index: 0,

@@ -3,7 +3,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import AppNavigation from "./src/navigation/AppNevigation";
 import Toast from 'react-native-toast-message';
-import { MenuProvider } from "./src/context/MenuContext";
+import { UserProvider } from "./src/context/UserContext";
 import {
   QueryClient,
   QueryClientProvider,
@@ -20,12 +20,12 @@ export default function App() {
     <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
 
-      <MenuProvider>
+        <UserProvider>
         <StatusBar style="auto" />
         <AppNavigation />
         
         <Toast />
-      </MenuProvider>
+      </UserProvider>
         </QueryClientProvider>
     </SafeAreaProvider>
   );

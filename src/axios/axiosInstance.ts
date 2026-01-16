@@ -1,10 +1,10 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// ⚠️ localhost RN me kaam nahi karta (explained below)
-// const BASE_URL = "http://10.0.2.2:3000"; // Android emulator
-// const BASE_URL = "http://192.168.0.123:3000";
-const BASE_URL = "http://43.204.250.254:4001"; // real device
+
+// const BASE_URL = "http://43.204.250.254:4001"; //server url
+
+const BASE_URL = "http://172.30.1.119:3000"; //localhost url
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,

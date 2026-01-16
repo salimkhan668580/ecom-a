@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {  useState } from "react";
 import {
   View,
   Text,
@@ -14,26 +14,30 @@ import { Entypo } from "@expo/vector-icons";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { RootStackParamList } from "../../navigation/AppNevigation";
 import DetailsHeader from "../../layout/DetailsHeader";
+import { useUser } from "../../context/UserContext";
+import ChangePassword from "./ChangePassword";
+
+
 
 export default function ProfileScreen() {
+
+  const { user } = useUser();
+  console.log("user", user);
+
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Profile data state
   const [profileData, setProfileData] = useState({
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 234 567 8900",
-    gender: "Male",
+    id: user?.id,
+    name: user?.name,
+    email: user?.email,
+    phone:user?.phone,
+    gender: user?.gender,
   });
 
-  // Password state
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+
 
   const handleSaveProfile = () => {
     // TODO: Implement API call to save profile
@@ -41,24 +45,7 @@ export default function ProfileScreen() {
     setIsEditing(false);
   };
 
-  const handleChangePassword = () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      Alert.alert("Error", "New passwords do not match!");
-      return;
-    }
-    if (passwordData.newPassword.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters!");
-      return;
-    }
-    // TODO: Implement API call to change password
-    Alert.alert("Success", "Password changed successfully!");
-    setIsChangingPassword(false);
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
-  };
+
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -228,89 +215,7 @@ export default function ProfileScreen() {
             </View>
 
             {isChangingPassword ? (
-              <View className="gap-4">
-                <View>
-                  <Text className="text-normal-text text-sm font-medium mb-2">
-                    Current Password
-                  </Text>
-                  <TextInput
-                    value={passwordData.currentPassword}
-                    onChangeText={(text) =>
-                      setPasswordData({
-                        ...passwordData,
-                        currentPassword: text,
-                      })
-                    }
-                    secureTextEntry
-                    placeholder="Enter current password"
-                    className="w-full h-12 border-2 border-gray-300 bg-white rounded-md px-3"
-                    style={styles.input}
-                  />
-                </View>
-                <View>
-                  <Text className="text-normal-text text-sm font-medium mb-2">
-                    New Password
-                  </Text>
-                  <TextInput
-                    value={passwordData.newPassword}
-                    onChangeText={(text) =>
-                      setPasswordData({ ...passwordData, newPassword: text })
-                    }
-                    secureTextEntry
-                    placeholder="Enter new password"
-                    className="w-full h-12 border-2 border-gray-300 bg-white rounded-md px-3"
-                    style={styles.input}
-                  />
-                </View>
-                <View>
-                  <Text className="text-normal-text text-sm font-medium mb-2">
-                    Confirm New Password
-                  </Text>
-                  <TextInput
-                    value={passwordData.confirmPassword}
-                    onChangeText={(text) =>
-                      setPasswordData({ ...passwordData, confirmPassword: text })
-                    }
-                    secureTextEntry
-                    placeholder="Confirm new password"
-                    className="w-full h-12 border-2 border-gray-300 bg-white rounded-md px-3"
-                    style={styles.input}
-                  />
-                </View>
-                <View className="flex-row gap-3 mt-2">
-                  <TouchableOpacity
-                    onPress={() => {
-                      setIsChangingPassword(false);
-                      setPasswordData({
-                        currentPassword: "",
-                        newPassword: "",
-                        confirmPassword: "",
-                      });
-                    }}
-                    className="flex-1 h-12 bg-gray-200 rounded-md items-center justify-center"
-                  >
-                    <Text className="text-normal-text text-base font-semibold">
-                      Cancel
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={handleChangePassword}
-                    activeOpacity={0.8}
-                    style={styles.buttonContainer}
-                  >
-                    <LinearGradient
-                      colors={["#7C3AED", "#EC4899"]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={styles.gradientButton}
-                    >
-                      <Text className="text-white text-base font-semibold">
-                        Update
-                      </Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </View>
-              </View>
+           <ChangePassword  isChangingPassword={isChangingPassword} setIsChangingPassword={setIsChangingPassword}/>
             ) : (
               <Text className="text-secondary-text text-sm">
                 Click &quot;Change&quot; to update your password
