@@ -15,6 +15,7 @@ import { Feather } from "@expo/vector-icons";
 import ProductCard from "./product/ProductCard";
 import { RootStackParamList } from "../../navigation/AppNevigation";
 import { LinearGradient } from "expo-linear-gradient";
+import HomeCrasual from "../homeCrasual/HomeCrasual";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -146,8 +147,13 @@ export default function HomeScreen() {
       showNotificationIcon
     >
 
+       <View className="px-6 mb-2 h-30">
+          <HomeCrasual />
+        </View>
+
         {/* Search Bar */}
         <View className="px-6 mb-6 flex-row items-center gap-3">
+       
           <TextInput
             placeholder="Search"
             className="bg-white rounded-xl p-4 border-2 border-gray-200"
