@@ -11,10 +11,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Entypo, FontAwesome6 } from "@expo/vector-icons";
 import DetailsHeader from "../../layout/DetailsHeader";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, NavigationProp } from "@react-navigation/native";
+import { RootStackParamList } from "../../navigation/AppNevigation";
 
 export default function SettingsScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   // Notification settings
   const [notifications, setNotifications] = useState({
     pushNotifications: true,
@@ -367,19 +368,19 @@ export default function SettingsScreen() {
               icon="help"
               title="Help & Support"
               subtitle="Get help with your account"
-              onPress={() => Alert.alert("Help", "Help & Support coming soon")}
+              onPress={() => navigation.navigate("HelpSupport")}
             />
             <SettingItem
               icon="documents"
               title="Privacy Policy"
               subtitle="Read our privacy policy"
-              onPress={() => Alert.alert("Privacy", "Privacy policy coming soon")}
+              onPress={() => navigation.navigate("PrivacyPolicy")}
             />
             <SettingItem
               icon="document"
               title="Terms of Service"
               subtitle="Read our terms of service"
-              onPress={() => Alert.alert("Terms", "Terms of service coming soon")}
+              onPress={() => navigation.navigate("TermsAndConditions")}
             />
           </View>
 

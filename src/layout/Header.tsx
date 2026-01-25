@@ -84,7 +84,7 @@ export default function Header({
             )}
 
             <TouchableOpacity
-            
+              onPress={() => setIsMenuOpen(true)}
               className="p-2 relative"
             >
               <FontAwesome6 name="bars" size={24} color="black" />
@@ -96,11 +96,17 @@ export default function Header({
       </View>
 
       {/* Backdrop */}
-     
+      {isMenuOpen && (
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={() => setIsMenuOpen(false)}
+        />
+      )}
 
-  
-        {isMenuOpen && (
-          <View style={styles.menuContainer}>
+      {/* Menu */}
+      {isMenuOpen && (
+        <View style={styles.menuContainer}>
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Menu Header */}
             <View className="flex-row mt-5  items-center justify-between p-6 border-b border-gray-200">

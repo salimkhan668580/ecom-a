@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,58 +6,178 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Entypo } from "@expo/vector-icons";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { RootStackParamList } from "../../navigation/AppNevigation";
-import Header from "../../layout/Header";
 import DetailsHeader from "../../layout/DetailsHeader";
+import axiosInstance from "../../axios/axiosInstance";
+import Toast from "react-native-toast-message";
 
-// Mock cart items
-const initialCartItems = [
-  {
-    id: "1",
-    name: "Product A",
-    price: 39.99,
-    quantity: 2,
-    image: require("../../../assets/logo.png"), // Using logo as placeholder
-  },
-  {
-    id: "2",
-    name: "Product B",
-    price: 49.99,
-    quantity: 1,
-    image: require("../../../assets/logo.png"),
-  },
-  {
-    id: "3",
-    name: "Product C",
-    price: 29.99,
-    quantity: 3,
-    image: require("../../../assets/logo.png"),
-  },
-];
+// API Response Types
+type ApiProduct = {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  image: string[];
+  category: string;
+  avgRating: number;
+  createdAt: string;
+  updatedAt: string;
+  quantity?: number;
+  itemPrice?: number;
+};
+
+type ApiCartAggregation = {
+  _id: string;
+  userId: string;
+  totalPrice: number;
+  createdAt: string;
+  updatedAt: string;
+  appliedCoupon?: string;
+  payableAmount: number;
+  productDetails: ApiProduct[];
+};
+
+type ApiResponse = {
+  success: boolean;
+  message: string;
+  cartAggregation: ApiCartAggregation[];
+};
+
+type CartItem = {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+};
 
 export default function CartScreen() {
-  const [cartItems, setCartItems] = useState(initialCartItems);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [payableAmount, setPayableAmount] = useState(0);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
-  const updateQuantity = (id: string, change: number) => {
-    setCartItems((items) =>
-      items
-        .map((item) =>
-          item.id === id
-            ? { ...item, quantity: Math.max(1, item.quantity + change) }
-            : item
-        )
-        .filter((item) => item.quantity > 0)
-    );
+  const fetchCart = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get<ApiResponse>("/user/cart");
+
+      if (response.data.success && response.data.cartAggregation) {
+        // Get the first cart aggregation (assuming single cart per user)
+        const cartData = response.data.cartAggregation[0];
+        
+        if (cartData && cartData.productDetails) {
+          // Map API products to CartItem type
+          const mappedItems: CartItem[] = cartData.productDetails.map((product) => ({
+            id: product._id,
+            name: product.name,
+            price: product.itemPrice || product.price, // Use itemPrice if available, otherwise use price
+            quantity: product.quantity || 1, // Use quantity from API response
+            image: product.image && product.image.length > 0 ? product.image[0] : "",
+          }));
+
+          setCartItems(mappedItems);
+          setTotalPrice(cartData.totalPrice || 0);
+          setPayableAmount(cartData.payableAmount || cartData.totalPrice || 0);
+        } else {
+          setCartItems([]);
+          setTotalPrice(0);
+          setPayableAmount(0);
+        }
+      }
+    } catch (error: any) {
+      console.error("Error fetching cart:", error);
+      Alert.alert("Error", "Failed to load cart items. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const removeItem = (id: string) => {
-    setCartItems((items) => items.filter((item) => item.id !== id));
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchCart();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const updateQuantity = async (id: string, change: number) => {
+    const item = cartItems.find((item) => item.id === id);
+    if (!item) return;
+
+    const newQuantity = Math.max(0, item.quantity + change);
+    
+    // If quantity becomes 0, remove the item
+    if (newQuantity === 0) {
+      await removeItem(id);
+      return;
+    }
+
+    try {
+      const payload = {
+        productId: id,
+        qty: newQuantity,
+      };
+
+      const response = await axiosInstance.post("/user/remove-to-cart", payload);
+
+      if (response.data.success) {
+        // Refresh cart after successful update
+        await fetchCart();
+        Toast.show({
+          type: "success",
+          text1: "Cart updated",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error updating cart quantity:", error);
+      Toast.show({
+        type: "error",
+        text1: error.response?.data?.message || "Failed to update quantity",
+      });
+    }
+  };
+
+  const removeItem = async (id: string) => {
+    try {
+      const payload = {
+        productId: id,
+        qty: 0, // Set to 0 to remove the item completely
+      };
+
+      const response = await axiosInstance.post("/user/remove-to-cart", payload);
+
+      if (response.data.success) {
+        // Refresh cart after successful removal
+        await fetchCart();
+        Toast.show({
+          type: "success",
+          text1: "Item removed from cart",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error removing item from cart:", error);
+      Toast.show({
+        type: "error",
+        text1: error.response?.data?.message || "Failed to remove item from cart",
+      });
+    }
   };
 
   const calculateSubtotal = () => {
@@ -67,18 +187,38 @@ export default function CartScreen() {
     );
   };
 
-  const subtotal = calculateSubtotal();
+  const subtotal = totalPrice > 0 ? totalPrice : calculateSubtotal();
   const shipping = subtotal > 0 ? 10.0 : 0;
-  const total = subtotal + shipping;
+  const total = payableAmount > 0 ? payableAmount : subtotal + shipping;
 
   const handleCheckout = () => {
     // Navigate to payment success screen
     navigation.navigate("PaymentSuccess");
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <DetailsHeader
+          title="Shopping Cart"
+          subtitle="Loading your cart..."
+        />
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#7C3AED" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <DetailsHeader
           title="Shopping Cart"
           subtitle={`${cartItems.length} ${cartItems.length === 1 ? "item" : "items"} in your cart`}
@@ -95,11 +235,17 @@ export default function CartScreen() {
                 >
                   <View className="flex-row">
                     {/* Product Image */}
-                    <Image
-                      source={item.image}
-                      className="w-20 h-20 rounded-lg mr-4"
-                      resizeMode="cover"
-                    />
+                    {item.image ? (
+                      <Image
+                        source={{ uri: item.image }}
+                        className="w-20 h-20 rounded-lg mr-4"
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View className="w-20 h-20 rounded-lg mr-4 bg-gray-200 items-center justify-center">
+                        <Entypo name="image" size={24} color="#9CA3AF" />
+                      </View>
+                    )}
 
                     {/* Product Info */}
                     <View className="flex-1">
@@ -211,6 +357,7 @@ export default function CartScreen() {
               Add items to your cart to get started
             </Text>
             <TouchableOpacity
+              onPress={() => navigation.navigate("MainTabs", { screen: "Home" })}
               activeOpacity={0.8}
               style={styles.buttonContainer}
             >

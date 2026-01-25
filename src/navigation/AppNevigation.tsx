@@ -16,6 +16,8 @@ import HelpSupport from "../components/HelpSupport/HelpSupport";
 import PaymentSuccess from "../components/Payment/PaymentSuccess";
 import RewardCoupon from "../components/RewardCoupon/RewardCoupon";
 import DeliveryAddress from "../components/deliveryAddress/DeliveryAddress";
+import TermsAndConditions from "../components/settings/termAndCondation";
+import PrivacyPolicy from "../components/settings/PrivacyPolicy";
 import { CreateUserData } from "../schema/AuthSchema";
 
 export type RootStackParamList = {
@@ -34,6 +36,8 @@ export type RootStackParamList = {
   PaymentSuccess: undefined;
   RewardCoupon: undefined;
   DeliveryAddress: undefined;
+  TermsAndConditions: undefined;
+  PrivacyPolicy: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -63,6 +67,8 @@ export default function AppNavigation() {
         <Stack.Screen name="HelpSupport" component={HelpSupport} />
         <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
         <Stack.Screen name="RewardCoupon" component={RewardCoupon} />
+        <Stack.Screen name="TermsAndConditions" component={TermsAndConditions} />
+        <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
         </Stack.Navigator>
     </NavigationContainer>
   );

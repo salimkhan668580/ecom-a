@@ -35,6 +35,7 @@ type ApiProductDetails = {
   updatedAt: string;
   canRate?: boolean;
   alreadyRated?: boolean;
+  InWishlist?: boolean;
 };
 
 type ApiResponse = {
@@ -69,6 +70,7 @@ export default function ProductDetails() {
   const [loading, setLoading] = useState(true);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [cartLoading, setCartLoading] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
@@ -105,6 +107,8 @@ export default function ProductDetails() {
         };
 
         setProduct(productDetails);
+        // Set wishlist state from API response
+        setIsWishlisted(apiProduct.InWishlist || false);
       }
     } catch (error: any) {
       console.error("Error fetching product details:", error);
@@ -122,11 +126,37 @@ export default function ProductDetails() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
 
-  const handleAddToCart = () => {
-    Toast.show({
-      type: "success",
-      text1: "Product added to cart!",
-    });
+  const handleAddToCart = async () => {
+    if (!product) return;
+
+    try {
+      setCartLoading(true);
+      const payload = {
+        items: [
+          {
+            productId: product.id,
+            qty: quantity,
+          },
+        ],
+      };
+
+      const response = await axiosInstance.post("/user/add-to-cart", payload);
+
+      if (response.data.success) {
+        Toast.show({
+          type: "success",
+          text1: "Product added to cart!",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error adding to cart:", error);
+      Toast.show({
+        type: "error",
+        text1: error.response?.data?.message || "Failed to add product to cart",
+      });
+    } finally {
+      setCartLoading(false);
+    }
   };
 
   const handleWishlist = async () => {
@@ -509,6 +539,7 @@ export default function ProductDetails() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleAddToCart}
+            disabled={cartLoading}
             activeOpacity={0.8}
             style={styles.buttonContainer}
             className="flex-1"
@@ -519,9 +550,13 @@ export default function ProductDetails() {
               end={{ x: 1, y: 0 }}
               style={styles.gradientButton}
             >
-              <Text className="text-white text-base font-semibold">
-                Add to Cart
-              </Text>
+              {cartLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text className="text-white text-base font-semibold">
+                  Add to Cart
+                </Text>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         </View>
