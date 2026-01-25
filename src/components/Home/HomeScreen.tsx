@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   ScrollView,
   StyleSheet,
   Dimensions,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import ScreenLayout from "../../layout/ScreenLayout";
@@ -16,128 +18,156 @@ import ProductCard from "./product/ProductCard";
 import { RootStackParamList } from "../../navigation/AppNevigation";
 import { LinearGradient } from "expo-linear-gradient";
 import HomeCrasual from "../homeCrasual/HomeCrasual";
+import axiosInstance from "../../axios/axiosInstance";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-// Mock products data
-export const products = [
-  {
-    id: "1",
-    title: "Wireless Bluetooth Headphones",
-    price: 79.99,
-    discount: 20,
-    rating: 4.5,
-    image: require("../../../assets/logo.png"),
-    category: "Electronics",
-    brand: "AudioTech",
-  },
-  {
-    id: "2",
-    title: "Smart Watch Fitness Tracker",
-    price: 129.99,
-    discount: 15,
-    rating: 4.8,
-    image: require("../../../assets/logo.png"),
-    category: "Wearables",
-    brand: "FitTech",
-  },
-  {
-    id: "3",
-    title: "Portable Power Bank 20000mAh",
-    price: 39.99,
-    rating: 4.2,
-    image: require("../../../assets/logo.png"),
-    category: "Accessories",
-    brand: "PowerMax",
-  },
-  {
-    id: "4",
-    title: "USB-C Fast Charging Cable",
-    price: 19.99,
-    discount: 10,
-    rating: 4.6,
-    image: require("../../../assets/logo.png"),
-    category: "Accessories",
-    brand: "CablePro",
-  },
-  {
-    id: "5",
-    title: "Wireless Mouse Ergonomic Design",
-    price: 29.99,
-    rating: 4.4,
-    image: require("../../../assets/logo.png"),
-    category: "Electronics",
-    brand: "TechMouse",
-  },
-  {
-    id: "6",
-    title: "Laptop Stand Adjustable Height",
-    price: 49.99,
-    discount: 25,
-    rating: 4.7,
-    image: require("../../../assets/logo.png"),
-    category: "Accessories",
-    brand: "StandPro",
-  },
-];
+// API Response Types
+type ApiProduct = {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  image: string[];
+  category: string;
+  avgRating: number;
+  ratingCount?: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type Product = {
+  id: string;
+  title: string;
+  price: number;
+  discount?: number;
+  rating: number;
+  image: string;
+  category: string;
+  stock: number;
+};
+
+type ApiResponse = {
+  success: boolean;
+  message: string;
+  data: ApiProduct[];
+  pagination: {
+    totalDocuments: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+};
 
 // Filter options
-const categories = ["Electronics", "Wearables", "Accessories", "Computers", "Mobile"];
-const brands = ["AudioTech", "FitTech", "PowerMax", "CablePro", "TechMouse", "StandPro"];
+const categories = ["Electronics", "Wearables", "Accessories", "Computers", "Mobile", "Fashion"];
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [priceOrder, setPriceOrder] = useState<string>("");
+  const [brand, setBrand] = useState("");
+  const [rating, setRating] = useState("");
+  const [category, setCategory] = useState("");
 
-  const toggleCategory = (category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    );
+  // Fetch products from API
+  const fetchProducts = async (pageNum: number = 1, resetPage: boolean = false) => {
+    try {
+      setLoading(true);
+      
+      // Build query parameters
+      const params = new URLSearchParams();
+      params.append("page", pageNum.toString());
+      params.append("limit", "10");
+      
+      if (search) params.append("search", search);
+      if (priceOrder) params.append("price_order", priceOrder);
+      if (brand) params.append("brand", brand);
+      if (rating) params.append("rating", rating);
+      if (category) params.append("category", category);
+
+      const response = await axiosInstance.get<ApiResponse>(
+        `/product?${params.toString()}`
+      );
+
+      if (response.data.success && response.data.data) {
+        // Map API response to Product type
+        const mappedProducts: Product[] = response.data.data.map((apiProduct) => ({
+          id: apiProduct._id,
+          title: apiProduct.name,
+          price: apiProduct.price,
+          rating: apiProduct.avgRating || 0,
+          image: apiProduct.image && apiProduct.image.length > 0 ? apiProduct.image[0] : "",
+          category: apiProduct.category,
+          stock: apiProduct.stock,
+        }));
+
+        if (resetPage || pageNum === 1) {
+          setProducts(mappedProducts);
+        } else {
+          setProducts((prev) => [...prev, ...mappedProducts]);
+        }
+      }
+    } catch (error: any) {
+      console.error("Error fetching products:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to fetch products"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const toggleBrand = (brand: string) => {
-    setSelectedBrands((prev) =>
-      prev.includes(brand)
-        ? prev.filter((b) => b !== brand)
-        : [...prev, brand]
-    );
+  // Debounce timeout ref
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounced search handler
+  const handleSearchChange = (text: string) => {
+    setSearch(text);
+    
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Set new timeout for debounced API call
+    searchTimeoutRef.current = setTimeout(() => {
+      fetchProducts(1, true);
+    }, 500);
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Fetch products when filters change (excluding search, which is handled by debounce)
+  useEffect(() => {
+    fetchProducts(1, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [priceOrder, brand, rating, category]);
 
   const handleApplyFilter = () => {
-    // TODO: Apply filters to products
+    fetchProducts(1, true);
     setIsFilterVisible(false);
   };
 
   const handleResetFilter = () => {
-    setMinPrice("");
-    setMaxPrice("");
-    setSelectedCategories([]);
-    setSelectedBrands([]);
+    setPriceOrder("");
+    setBrand("");
+    setRating("");
+    setCategory("");
+    fetchProducts(1, true);
   };
-
-  const filteredProducts = products.filter((product) => {
-    // Price filter
-    if (minPrice && product.price < parseFloat(minPrice)) return false;
-    if (maxPrice && product.price > parseFloat(maxPrice)) return false;
-
-    // Category filter
-    if (selectedCategories.length > 0 && !selectedCategories.includes(product.category)) {
-      return false;
-    }
-
-    // Brand filter
-    if (selectedBrands.length > 0 && !selectedBrands.includes(product.brand)) {
-      return false;
-    }
-
-    return true;
-  });
 
   return (
     <ScreenLayout
@@ -153,9 +183,10 @@ export default function HomeScreen() {
 
         {/* Search Bar */}
         <View className="px-6 mb-6 flex-row items-center gap-3">
-       
           <TextInput
-            placeholder="Search"
+            placeholder="Search products..."
+            value={search}
+            onChangeText={handleSearchChange}
             className="bg-white rounded-xl p-4 border-2 border-gray-200"
             style={{ width: "80%" }}
           />
@@ -172,22 +203,37 @@ export default function HomeScreen() {
           <Text className="text-normal-text text-xl font-semibold mb-4">
             Products
           </Text>
-          <View className="flex-row flex-wrap justify-between">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                title={product.title}
-                price={product.price}
-                discount={product.discount}
-                rating={product.rating}
-                image={product.image}
-                onPress={() => {
-                  navigation.navigate("ProductDetails", { productId: product.id });
-                }}
-              />
-            ))}
-          </View>
+          {loading && products.length === 0 ? (
+            <View className="items-center justify-center py-20">
+              <ActivityIndicator size="large" color="#7C3AED" />
+              <Text className="text-secondary-text text-sm mt-4">
+                Loading products...
+              </Text>
+            </View>
+          ) : products.length > 0 ? (
+            <View className="flex-row flex-wrap justify-between">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id}
+                  title={product.title}
+                  price={product.price}
+                  discount={product.discount}
+                  rating={product.rating}
+                  image={{ uri: product.image }}
+                  onPress={() => {
+                    navigation.navigate("ProductDetails", { productId: product.id });
+                  }}
+                />
+              ))}
+            </View>
+          ) : (
+            <View className="items-center justify-center py-20">
+              <Text className="text-secondary-text text-base">
+                No products found
+              </Text>
+            </View>
+          )}
         </View>
 
       {/* Filter Modal */}
@@ -217,47 +263,22 @@ export default function HomeScreen() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 20 }}
               >
-              {/* Price Range */}
+              {/* Price Order */}
               <View className="px-6 py-4 border-b border-gray-200">
                 <Text className="text-normal-text text-lg font-semibold mb-4">
-                  Price Range
-                </Text>
-                <View className="flex-row items-center gap-3">
-                  <View className="flex-1">
-                    <Text className="text-secondary-text text-sm mb-2">Min Price ($)</Text>
-                    <TextInput
-                      placeholder="0"
-                      value={minPrice}
-                      onChangeText={setMinPrice}
-                      keyboardType="numeric"
-                      className="bg-white rounded-xl p-4 border-2 border-gray-200"
-                    />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-secondary-text text-sm mb-2">Max Price ($)</Text>
-                    <TextInput
-                      placeholder="1000"
-                      value={maxPrice}
-                      onChangeText={setMaxPrice}
-                      keyboardType="numeric"
-                      className="bg-white rounded-xl p-4 border-2 border-gray-200"
-                    />
-                  </View>
-                </View>
-              </View>
-
-              {/* Categories */}
-              <View className="px-6 py-4 border-b border-gray-200">
-                <Text className="text-normal-text text-lg font-semibold mb-4">
-                  Categories
+                  Sort by Price
                 </Text>
                 <View className="gap-3">
-                  {categories.map((category) => {
-                    const isSelected = selectedCategories.includes(category);
+                  {[
+                    { value: "", label: "None" },
+                    { value: "asc", label: "Low to High" },
+                    { value: "desc", label: "High to Low" },
+                  ].map((option) => {
+                    const isSelected = priceOrder === option.value;
                     return (
                       <TouchableOpacity
-                        key={category}
-                        onPress={() => toggleCategory(category)}
+                        key={option.value}
+                        onPress={() => setPriceOrder(option.value)}
                         className="flex-row items-center"
                         activeOpacity={0.7}
                       >
@@ -272,25 +293,28 @@ export default function HomeScreen() {
                             <Feather name="check" size={14} color="#FFFFFF" />
                           )}
                         </View>
-                        <Text className="text-normal-text text-base">{category}</Text>
+                        <Text className="text-normal-text text-base">{option.label}</Text>
                       </TouchableOpacity>
                     );
                   })}
                 </View>
               </View>
 
-              {/* Brands */}
-              <View className="px-6 py-4">
+              {/* Category */}
+              <View className="px-6 py-4 border-b border-gray-200">
                 <Text className="text-normal-text text-lg font-semibold mb-4">
-                  Brands
+                  Category
                 </Text>
                 <View className="gap-3">
-                  {brands.map((brand) => {
-                    const isSelected = selectedBrands.includes(brand);
+                  {[
+                    { value: "", label: "All Categories" },
+                    ...categories.map((cat) => ({ value: cat, label: cat })),
+                  ].map((option) => {
+                    const isSelected = category === option.value;
                     return (
                       <TouchableOpacity
-                        key={brand}
-                        onPress={() => toggleBrand(brand)}
+                        key={option.value}
+                        onPress={() => setCategory(option.value)}
                         className="flex-row items-center"
                         activeOpacity={0.7}
                       >
@@ -305,12 +329,65 @@ export default function HomeScreen() {
                             <Feather name="check" size={14} color="#FFFFFF" />
                           )}
                         </View>
-                        <Text className="text-normal-text text-base">{brand}</Text>
+                        <Text className="text-normal-text text-base">{option.label}</Text>
                       </TouchableOpacity>
                     );
                   })}
                 </View>
               </View>
+
+              {/* Brand */}
+              <View className="px-6 py-4 border-b border-gray-200">
+                <Text className="text-normal-text text-lg font-semibold mb-4">
+                  Brand
+                </Text>
+                <TextInput
+                  placeholder="Enter brand name"
+                  value={brand}
+                  onChangeText={setBrand}
+                  className="bg-white rounded-xl p-4 border-2 border-gray-200"
+                />
+              </View>
+
+              {/* Rating */}
+              <View className="px-6 py-4 border-b border-gray-200">
+                <Text className="text-normal-text text-lg font-semibold mb-4">
+                  Minimum Rating
+                </Text>
+                <View className="gap-3">
+                  {[
+                    { value: "", label: "All Ratings" },
+                    { value: "4", label: "4+ Stars" },
+                    { value: "3", label: "3+ Stars" },
+                    { value: "2", label: "2+ Stars" },
+                    { value: "1", label: "1+ Stars" },
+                  ].map((option) => {
+                    const isSelected = rating === option.value;
+                    return (
+                      <TouchableOpacity
+                        key={option.value}
+                        onPress={() => setRating(option.value)}
+                        className="flex-row items-center"
+                        activeOpacity={0.7}
+                      >
+                        <View
+                          className={`w-5 h-5 rounded border-2 items-center justify-center mr-3 ${
+                            isSelected
+                              ? "bg-primary border-primary"
+                              : "border-gray-300"
+                          }`}
+                        >
+                          {isSelected && (
+                            <Feather name="check" size={14} color="#FFFFFF" />
+                          )}
+                        </View>
+                        <Text className="text-normal-text text-base">{option.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
               </ScrollView>
             </View>
 

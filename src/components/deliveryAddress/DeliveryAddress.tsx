@@ -1,156 +1,167 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   StyleSheet,
   Alert,
-  Modal,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Entypo, Feather } from "@expo/vector-icons";
 import DetailsHeader from "../../layout/DetailsHeader";
+import EditDeliveryAddress, { Address } from "./EditDeliveryAddress";
+import AddDeliveryAddress from "./AddDeliveryAddress";
+import axiosInstance from "../../axios/axiosInstance";
+import Toast from "react-native-toast-message";
 
-type Address = {
-  id: string;
-  name: string;
-  phone: string;
-  addressLine1: string;
-  addressLine2?: string;
+// API Response Types
+type ApiAddress = {
+  fullAddress: string;
   city: string;
   state: string;
-  zipCode: string;
-  country: string;
-  isDefault: boolean;
+  pin: number;
+  _id: string;
+};
+
+type ApiResponse = {
+  success: boolean;
+  address: {
+    _id: string;
+    userId: string;
+    allAddress: ApiAddress[];
+    __v: number;
+  };
 };
 
 export default function DeliveryAddress() {
-  // Mock initial addresses
-  const [addresses, setAddresses] = useState<Address[]>([
-    {
-      id: "1",
-      name: "John Doe",
-      phone: "+1 234 567 8900",
-      addressLine1: "123 Main Street",
-      addressLine2: "Apt 4B",
-      city: "New York",
-      state: "NY",
-      zipCode: "10001",
-      country: "United States",
-      isDefault: true,
-    },
-    {
-      id: "2",
-      name: "John Doe",
-      phone: "+1 234 567 8900",
-      addressLine1: "456 Oak Avenue",
-      city: "Los Angeles",
-      state: "CA",
-      zipCode: "90001",
-      country: "United States",
-      isDefault: false,
-    },
-  ]);
-
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
-  const [formData, setFormData] = useState<Omit<Address, "id">>({
-    name: "",
-    phone: "",
-    addressLine1: "",
-    addressLine2: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    country: "United States",
-    isDefault: false,
-  });
+  const [loading, setLoading] = useState(true);
+
+  // Fetch addresses from API
+  const fetchAddresses = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get<ApiResponse>("/user/address/");
+      
+      if (response.data.success && response.data.address?.allAddress) {
+        // Map API response to Address type
+        const mappedAddresses: Address[] = response.data.address.allAddress.map(
+          (apiAddr, index) => ({
+            id: apiAddr._id,
+            name: "", // API doesn't provide name, using empty string
+            phone: "", // API doesn't provide phone, using empty string
+            addressLine1: apiAddr.fullAddress,
+            addressLine2: "", // API doesn't provide addressLine2
+            city: apiAddr.city,
+            state: apiAddr.state,
+            zipCode: apiAddr.pin.toString(),
+            country: "India", // Default country, adjust as needed
+            isDefault: index === 0, // Set first address as default
+          })
+        );
+        setAddresses(mappedAddresses);
+      }
+    } catch (error: any) {
+      console.error("Error fetching addresses:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to fetch addresses"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAddresses();
+  }, []);
 
   const openAddModal = () => {
-    setEditingAddress(null);
-    setFormData({
-      name: "",
-      phone: "",
-      addressLine1: "",
-      addressLine2: "",
-      city: "",
-      state: "",
-      zipCode: "",
-      country: "United States",
-      isDefault: false,
-    });
-    setIsModalVisible(true);
+    setIsAddModalVisible(true);
   };
 
   const openEditModal = (address: Address) => {
     setEditingAddress(address);
-    setFormData({
-      name: address.name,
-      phone: address.phone,
-      addressLine1: address.addressLine1,
-      addressLine2: address.addressLine2 || "",
-      city: address.city,
-      state: address.state,
-      zipCode: address.zipCode,
-      country: address.country,
-      isDefault: address.isDefault,
-    });
-    setIsModalVisible(true);
+    setIsEditModalVisible(true);
   };
 
-  const handleSaveAddress = () => {
-    // Validation
-    if (
-      !formData.name ||
-      !formData.phone ||
-      !formData.addressLine1 ||
-      !formData.city ||
-      !formData.state ||
-      !formData.zipCode ||
-      !formData.country
-    ) {
-      Alert.alert("Error", "Please fill in all required fields");
-      return;
-    }
+  const handleSaveAddress = async (addressData: Omit<Address, "id">) => {
+    try {
+      if (editingAddress) {
+        // Update existing address - Call API
+        const apiPayload = {
+          fullAddress: addressData.addressLine1,
+          city: addressData.city,
+          state: addressData.state,
+          pin: parseInt(addressData.zipCode) || 0,
+        };
 
-    if (editingAddress) {
-      // Update existing address
-      setAddresses((prev) =>
-        prev.map((addr) =>
-          addr.id === editingAddress.id
-            ? { ...formData, id: editingAddress.id }
-            : formData.isDefault && addr.isDefault
-            ? { ...addr, isDefault: false }
-            : addr
-        )
-      );
-      Alert.alert("Success", "Address updated successfully!");
-    } else {
-      // Add new address
-      const newAddress: Address = {
-        ...formData,
-        id: Date.now().toString(),
-      };
-
-      // If this is set as default, remove default from others
-      if (formData.isDefault) {
-        setAddresses((prev) =>
-          prev.map((addr) => ({ ...addr, isDefault: false }))
+        const response = await axiosInstance.put(
+          `/user/address/?addressId=${editingAddress.id}`,
+          apiPayload
         );
+
+        if (response.data.success) {
+          Toast.show({
+            type: "success",
+            text1: "Address updated successfully!",
+          });
+          
+          setIsEditModalVisible(false);
+          setEditingAddress(null);
+          
+          // Refresh addresses from API
+          await fetchAddresses();
+        }
+      } else {
+        // Add new address - Call API
+        // Combine addressLine1 and addressLine2 into fullAddress
+        const fullAddress = addressData.addressLine2
+          ? `${addressData.addressLine1}, ${addressData.addressLine2}`
+          : addressData.addressLine1;
+
+        const apiPayload = {
+          allAddress: [
+            {
+              fullAddress: fullAddress,
+              city: addressData.city,
+              state: addressData.state,
+              pin: parseInt(addressData.zipCode) || 0,
+            },
+          ],
+        };
+
+        const response = await axiosInstance.post("/user/address", apiPayload);
+
+        if (response.data.success) {
+          Toast.show({
+            type: "success",
+            text1: "Address added successfully!",
+          });
+          
+          setIsAddModalVisible(false);
+          
+          // Refresh addresses from API
+          await fetchAddresses();
+        }
       }
-
-      setAddresses((prev) => [...prev, newAddress]);
-      Alert.alert("Success", "Address added successfully!");
+    } catch (error: any) {
+      console.error("Error saving address:", error);
+      Toast.show({
+        type: "error",
+        text1: error.response?.data?.message || "Failed to save address",
+      });
     }
-
-    setIsModalVisible(false);
-    setEditingAddress(null);
   };
 
-  const handleDeleteAddress = (id: string) => {
+  const handleDeleteAddress = async (id: string) => {
+    // Show confirmation modal
     Alert.alert(
       "Delete Address",
       "Are you sure you want to delete this address?",
@@ -159,9 +170,26 @@ export default function DeliveryAddress() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            setAddresses((prev) => prev.filter((addr) => addr.id !== id));
-            Alert.alert("Success", "Address deleted successfully!");
+          onPress: async () => {
+            try {
+              // Call delete API
+              await axiosInstance.delete(`/user/address/?addressId=${id}`);
+              
+              // Show success message
+              Toast.show({
+                type: "success",
+                text1: "Address deleted successfully!",
+              });
+              
+              // Refresh addresses from API
+              await fetchAddresses();
+            } catch (error: any) {
+              console.error("Error deleting address:", error);
+              Toast.show({
+                type: "error",
+                text1: error.response?.data?.message || "Failed to delete address",
+              });
+            }
           },
         },
       ]
@@ -175,7 +203,10 @@ export default function DeliveryAddress() {
         isDefault: addr.id === id,
       }))
     );
-    Alert.alert("Success", "Default address updated!");
+    Toast.show({
+      type: "success",
+      text1: "Default address updated!",
+    });
   };
 
   return (
@@ -186,9 +217,19 @@ export default function DeliveryAddress() {
           subtitle="Manage your delivery addresses"
         />
 
-        {/* Addresses List */}
-        <View className="px-6 mb-6">
-          {addresses.length > 0 ? (
+        {/* Loading State */}
+        {loading ? (
+          <View className="flex-1 items-center justify-center py-20">
+            <ActivityIndicator size="large" color="#7C3AED" />
+            <Text className="text-secondary-text text-sm mt-4">
+              Loading addresses...
+            </Text>
+          </View>
+        ) : (
+          <>
+            {/* Addresses List */}
+            <View className="px-6 mb-6">
+              {addresses.length > 0 ? (
             addresses.map((address) => (
               <View
                 key={address.id}
@@ -198,9 +239,11 @@ export default function DeliveryAddress() {
                 <View className="flex-row items-start justify-between mb-3">
                   <View className="flex-1">
                     <View className="flex-row items-center mb-1">
-                      <Text className="text-normal-text text-lg font-semibold mr-2">
-                        {address.name}
-                      </Text>
+                      {address.name ? (
+                        <Text className="text-normal-text text-lg font-semibold mr-2">
+                          {address.name}
+                        </Text>
+                      ) : null}
                       {address.isDefault && (
                         <View className="bg-primary/10 px-2 py-1 rounded">
                           <Text className="text-primary text-xs font-semibold">
@@ -209,9 +252,11 @@ export default function DeliveryAddress() {
                         </View>
                       )}
                     </View>
-                    <Text className="text-secondary-text text-sm">
-                      {address.phone}
-                    </Text>
+                    {address.phone ? (
+                      <Text className="text-secondary-text text-sm">
+                        {address.phone}
+                      </Text>
+                    ) : null}
                   </View>
                   <View className="flex-row items-center gap-2">
                     <TouchableOpacity
@@ -271,248 +316,58 @@ export default function DeliveryAddress() {
           )}
         </View>
 
-        {/* Add Address Button */}
-        <View className="px-6 mb-6">
-          <TouchableOpacity
-            onPress={openAddModal}
-            activeOpacity={0.8}
-            style={styles.buttonContainer}
-          >
-            <LinearGradient
-              colors={["#7C3AED", "#EC4899"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.gradientButton}
-            >
-              <View className="flex-row items-center">
-                <Feather name="plus" size={20} color="#FFFFFF" />
-                <Text className="text-white text-base font-semibold ml-2">
-                  Add New Address
-                </Text>
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-
-      {/* Add/Edit Address Modal */}
-      <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setIsModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            {/* Modal Header */}
-            <View className="flex-row items-center justify-between px-6 py-4 border-b border-gray-200">
-              <Text className="text-normal-text text-2xl font-bold">
-                {editingAddress ? "Edit Address" : "Add New Address"}
-              </Text>
+            {/* Add Address Button */}
+            <View className="px-6 mb-6">
               <TouchableOpacity
-                onPress={() => setIsModalVisible(false)}
-                className="p-2"
+                onPress={openAddModal}
+                activeOpacity={0.8}
+                style={styles.buttonContainer}
               >
-                <Feather name="x" size={24} color="#6B7280" />
+                <LinearGradient
+                  colors={["#7C3AED", "#EC4899"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.gradientButton}
+                >
+                  <View className="flex-row items-center">
+                    <Feather name="plus" size={20} color="#FFFFFF" />
+                    <Text className="text-white text-base font-semibold ml-2">
+                      Add New Address
+                    </Text>
+                  </View>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
+          </>
+        )}
+      </ScrollView>
 
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 20 }}
-            >
-              <View className="px-6 py-4">
-                {/* Name */}
-                <View className="mb-4">
-                  <Text className="text-normal-text text-sm font-medium mb-2">
-                    Full Name *
-                  </Text>
-                  <TextInput
-                    value={formData.name}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, name: text })
-                    }
-                    placeholder="Enter full name"
-                    className="w-full h-12 border-2 border-gray-300 bg-white rounded-lg px-3"
-                    style={styles.input}
-                  />
-                </View>
+      {/* Add Address Modal */}
+      <AddDeliveryAddress
+        visible={isAddModalVisible}
+        onClose={() => {
+          setIsAddModalVisible(false);
+        }}
+        onSave={handleSaveAddress}
+      />
 
-                {/* Phone */}
-                <View className="mb-4">
-                  <Text className="text-normal-text text-sm font-medium mb-2">
-                    Phone Number *
-                  </Text>
-                  <TextInput
-                    value={formData.phone}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, phone: text })
-                    }
-                    placeholder="Enter phone number"
-                    keyboardType="phone-pad"
-                    className="w-full h-12 border-2 border-gray-300 bg-white rounded-lg px-3"
-                    style={styles.input}
-                  />
-                </View>
-
-                {/* Address Line 1 */}
-                <View className="mb-4">
-                  <Text className="text-normal-text text-sm font-medium mb-2">
-                    Address Line 1 *
-                  </Text>
-                  <TextInput
-                    value={formData.addressLine1}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, addressLine1: text })
-                    }
-                    placeholder="Street address, P.O. box"
-                    className="w-full h-12 border-2 border-gray-300 bg-white rounded-lg px-3"
-                    style={styles.input}
-                  />
-                </View>
-
-                {/* Address Line 2 */}
-                <View className="mb-4">
-                  <Text className="text-normal-text text-sm font-medium mb-2">
-                    Address Line 2
-                  </Text>
-                  <TextInput
-                    value={formData.addressLine2}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, addressLine2: text })
-                    }
-                    placeholder="Apartment, suite, unit, building, floor, etc."
-                    className="w-full h-12 border-2 border-gray-300 bg-white rounded-lg px-3"
-                    style={styles.input}
-                  />
-                </View>
-
-                {/* City */}
-                <View className="mb-4">
-                  <Text className="text-normal-text text-sm font-medium mb-2">
-                    City *
-                  </Text>
-                  <TextInput
-                    value={formData.city}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, city: text })
-                    }
-                    placeholder="Enter city"
-                    className="w-full h-12 border-2 border-gray-300 bg-white rounded-lg px-3"
-                    style={styles.input}
-                  />
-                </View>
-
-                {/* State and Zip Code Row */}
-                <View className="flex-row gap-3 mb-4">
-                  <View className="flex-1">
-                    <Text className="text-normal-text text-sm font-medium mb-2">
-                      State *
-                    </Text>
-                    <TextInput
-                      value={formData.state}
-                      onChangeText={(text) =>
-                        setFormData({ ...formData, state: text })
-                      }
-                      placeholder="State"
-                      className="w-full h-12 border-2 border-gray-300 bg-white rounded-lg px-3"
-                      style={styles.input}
-                    />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-normal-text text-sm font-medium mb-2">
-                      Zip Code *
-                    </Text>
-                    <TextInput
-                      value={formData.zipCode}
-                      onChangeText={(text) =>
-                        setFormData({ ...formData, zipCode: text })
-                      }
-                      placeholder="Zip code"
-                      keyboardType="numeric"
-                      className="w-full h-12 border-2 border-gray-300 bg-white rounded-lg px-3"
-                      style={styles.input}
-                    />
-                  </View>
-                </View>
-
-                {/* Country */}
-                <View className="mb-4">
-                  <Text className="text-normal-text text-sm font-medium mb-2">
-                    Country *
-                  </Text>
-                  <TextInput
-                    value={formData.country}
-                    onChangeText={(text) =>
-                      setFormData({ ...formData, country: text })
-                    }
-                    placeholder="Enter country"
-                    className="w-full h-12 border-2 border-gray-300 bg-white rounded-lg px-3"
-                    style={styles.input}
-                  />
-                </View>
-
-                {/* Default Address Toggle */}
-                <View className="flex-row items-center mb-6">
-                  <TouchableOpacity
-                    onPress={() =>
-                      setFormData({
-                        ...formData,
-                        isDefault: !formData.isDefault,
-                      })
-                    }
-                    className="flex-row items-center"
-                    activeOpacity={0.7}
-                  >
-                    <View
-                      className={`w-5 h-5 rounded border-2 items-center justify-center mr-3 ${
-                        formData.isDefault
-                          ? "bg-primary border-primary"
-                          : "border-gray-300"
-                      }`}
-                    >
-                      {formData.isDefault && (
-                        <Feather name="check" size={14} color="#FFFFFF" />
-                      )}
-                    </View>
-                    <Text className="text-normal-text text-base">
-                      Set as default address
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Save Button */}
-                <TouchableOpacity
-                  onPress={handleSaveAddress}
-                  activeOpacity={0.8}
-                  style={styles.buttonContainer}
-                >
-                  <LinearGradient
-                    colors={["#7C3AED", "#EC4899"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.gradientButton}
-                  >
-                    <Text className="text-white text-base font-semibold">
-                      {editingAddress ? "Update Address" : "Save Address"}
-                    </Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      {/* Edit Address Modal */}
+      {editingAddress && (
+        <EditDeliveryAddress
+          visible={isEditModalVisible}
+          editingAddress={editingAddress}
+          onClose={() => {
+            setIsEditModalVisible(false);
+            setEditingAddress(null);
+          }}
+          onSave={handleSaveAddress}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  input: {
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    backgroundColor: "#FFFFFF",
-  },
   buttonContainer: {
     width: "100%",
     borderRadius: 12,
@@ -532,17 +387,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 12,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: "90%",
-    flexDirection: "column",
   },
 });

@@ -1,6 +1,6 @@
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, TextInput, Image, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Image, ActivityIndicator, ScrollView,KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RootStackParamList } from "../../navigation/AppNevigation";
 import Toast from "react-native-toast-message";
@@ -67,11 +67,11 @@ export default function LoginPage() {
     const result = loginSchema.safeParse(values);
 
     if (!result.success) {
-      const fieldErrors = result.error.flatten().fieldErrors;
+      const formattedErrors = result.error.format();
 
       setErrors({
-        email: fieldErrors.email?.[0],
-        password: fieldErrors.password?.[0],
+        email: formattedErrors.email?._errors?.[0],
+        password: formattedErrors.password?._errors?.[0],
       });
       return;
     }
@@ -80,79 +80,115 @@ export default function LoginPage() {
     loginMutation.mutate(data);
   };
 
-  return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-1 items-center justify-center px-6">
-        <View className="mb-16 w-full border-2 border-primary rounded-lg px-3 min-h-1/2">
-          
-          <View className="items-center justify-center">
-            <Image
-              source={require("../../../assets/logo.png")}
-              className="h-[200px] w-[200px]"
-            />
-          </View>
-
-          {/* EMAIL */}
-         <TextInput placeholder="Email"
-          className="w-full h-14 border-2 border-gray-300 bg-white rounded-md px-3 mb-1"
-          value={values.email}
-          onChangeText={(text) => handleChange("email", text)}
-          />
-          {errors.email && (
-        <Text className="text-red-500 text-sm mb-1">{errors.email}</Text>
-      )}
-
-          {/* PASSWORD */}
-          <View className="flex-row items-center relative">
-
-          <TextInput placeholder="Password"
-          className="w-full h-14 border-2 border-gray-300 bg-white rounded-md px-3 mb-1"
-          value={values.password}
-          onChangeText={(text) => handleChange("password", text)}
-          secureTextEntry={!showPassword}
-          />
-       
-      <Entypo name={showPassword ? "eye-with-line" : "eye"} size={14} color="black" className="absolute right-3 top-1/2 -translate-y-1/2" onPress={() => setShowPassword(!showPassword)} />
-          </View>
-          {errors.password && (
-        <Text className="text-red-500 text-sm mb-1">{errors.password}</Text>
-      )}
 
 
-
-          <View className="flex items-end my-4">
-            <TouchableOpacity
-              onPress={() => navigation.navigate("ForgetPassword")}
-            >
-              <Text className="text-primary text-sm">
-                Forgot Password?
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            onPress={() => handleLogin(values)}
-            className="w-full h-12 bg-primary rounded-md items-center justify-center"
-            disabled={loginMutation.isPending}
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        >
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{
+              flexGrow: 1,
+              paddingVertical: 20,
+            }}
           >
-            <Text className="text-white text-base font-semibold">
-              {loginMutation.isPending ? <ActivityIndicator size="small" color="white" /> : "Login"}
-            </Text>
-          </TouchableOpacity>
+            <View className="flex-1 items-center justify-center px-6 py-8">
+              <View className="mb-16 w-full border-2 border-primary rounded-lg px-3">
+                
+                {/* LOGO */}
+                <View className="items-center justify-center">
+                  <Image
+                    source={require("../../../assets/logo.png")}
+                    className="h-[200px] w-[200px]"
+                  />
+                </View>
+    
+                {/* EMAIL */}
+                <TextInput
+                  placeholder="Email"
+                  className="w-full h-14 border-2 border-gray-300 bg-white rounded-md px-3 mb-1"
+                  value={values.email}
+                  onChangeText={(text) => handleChange("email", text)}
+                />
+                {errors.email && (
+                  <Text className="text-red-500 text-sm mb-1">
+                    {errors.email}
+                  </Text>
+                )}
+    
+                {/* PASSWORD */}
+                <View className="relative">
+                  <TextInput
+                    placeholder="Password"
+                    className="w-full h-14 border-2 border-gray-300 bg-white rounded-md px-3 mb-1"
+                    value={values.password}
+                    onChangeText={(text) => handleChange("password", text)}
+                    secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={{ position: "absolute", right: 12, top: 18 }}
+                  >
+                    <Entypo
+                      name={showPassword ? "eye-with-line" : "eye"}
+                      size={20}
+                      color="#6B7280"
+                    />
+                  </TouchableOpacity>
+                </View>
+    
+                {errors.password && (
+                  <Text className="text-red-500 text-sm mb-1">
+                    {errors.password}
+                  </Text>
+                )}
+    
+                <View className="items-end my-4">
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("ForgetPassword")}
+                  >
+                    <Text className="text-primary text-sm">
+                      Forgot Password?
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+    
+                <TouchableOpacity
+                  onPress={() => handleLogin(values)}
+                  className="w-full h-12 bg-primary rounded-md items-center justify-center"
+                  disabled={loginMutation.isPending}
+                >
+                  {loginMutation.isPending ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Text className="text-white text-base font-semibold">
+                      Login
+                    </Text>
+                  )}
+                </TouchableOpacity>
+    
+                <View className="items-end my-6">
+                  <Text className="text-secondary-text text-sm">
+                    Don&apos;t have an account?{" "}
+                    <Text
+                      onPress={() => navigation.navigate("Register")}
+                      className="text-primary"
+                    >
+                      Sign up
+                    </Text>
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    );
+    
 
-          <View className="items-end my-6">
-            <Text className="text-secondary-text text-sm">
-              Don&apos;t have an account?{" "}
-              <Text
-                onPress={() => navigation.navigate("Register")}
-                className="text-primary"
-              >
-                Sign up
-              </Text>
-            </Text>
-          </View>
-        </View>
-      </View>
-    </SafeAreaView>
-  );
 }

@@ -7,6 +7,8 @@ import {
   TextInput,
   StyleSheet,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -48,8 +50,25 @@ export default function ProfileScreen() {
 
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+  >
+    <SafeAreaView 
+    
+    className="flex-1 bg-background">
+      <ScrollView 
+     
+      className="flex-1"
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{
+        paddingBottom: 40,
+        flexGrow: 1,
+      }}
+    >
+      
         {/* Header */}
         <DetailsHeader title="My Account" subtitle="Manage your account and preferences" />
         <View className="px-6 pt-6 pb-4">
@@ -276,6 +295,7 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 

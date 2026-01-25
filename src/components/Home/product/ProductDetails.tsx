@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp, NavigationProp } from "@react-navigation/native";
@@ -13,88 +15,112 @@ import { Entypo, FontAwesome6 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { RootStackParamList } from "../../../navigation/AppNevigation";
 import Toast from 'react-native-toast-message';
+import axiosInstance from "../../../axios/axiosInstance";
 
 type ProductDetailsRouteProp = RouteProp<RootStackParamList, "ProductDetails">;
 
-// Mock product details data
-const getProductDetails = (productId: string) => {
-  const products: Record<string, any> = {
-    "1": {
-      id: "1",
-      title: "Wireless Bluetooth Headphones",
-      price: 79.99,
-      discount: 20,
-      rating: 4.5,
-      reviews: 234,
-      image: require("../../../../assets/logo.png"),
-      description:
-        "Premium wireless Bluetooth headphones with noise cancellation, 30-hour battery life, and superior sound quality. Perfect for music lovers and professionals.",
-      features: [
-        "Active Noise Cancellation",
-        "30-hour Battery Life",
-        "Quick Charge (10 min = 3 hours)",
-        "Comfortable Over-Ear Design",
-        "Premium Sound Quality",
-      ],
-      brand: "AudioTech",
-      packOf: "1 piece",
-      quantity: "1 unit",
-      type: "Wireless Headphones",
-      otherDetails: [
-        { label: "Model Number", value: "ATH-2024" },
-        { label: "Color", value: "Black" },
-        { label: "Weight", value: "250g" },
-        { label: "Warranty", value: "1 year" },
-      ],
-      inStock: true,
-      stockCount: 15,
-    },
-    "2": {
-      id: "2",
-      title: "Smart Watch Fitness Tracker",
-      price: 129.99,
-      discount: 15,
-      rating: 4.8,
-      reviews: 456,
-      image: require("../../../../assets/logo.png"),
-      description:
-        "Advanced smartwatch with fitness tracking, heart rate monitor, GPS, and smartphone notifications. Water-resistant design perfect for active lifestyles.",
-      features: [
-        "Heart Rate Monitor",
-        "GPS Tracking",
-        "Water Resistant (50m)",
-        "7-day Battery Life",
-        "Smartphone Notifications",
-      ],
-      brand: "FitTech",
-      packOf: "1 piece",
-      quantity: "1 unit",
-      type: "Smart Watch",
-      otherDetails: [
-        { label: "Model Number", value: "FT-5000" },
-        { label: "Color", value: "Silver" },
-        { label: "Display Size", value: "1.4 inches" },
-        { label: "Warranty", value: "2 years" },
-      ],
-      inStock: true,
-      stockCount: 8,
-    },
-  };
-  return products[productId] || products["1"];
+// API Response Types
+type ApiProductDetails = {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  image: string[];
+  category: string;
+  avgRating: number;
+  ratingCount?: number;
+  ratings: any[];
+  createdAt: string;
+  updatedAt: string;
+  canRate?: boolean;
+  alreadyRated?: boolean;
+};
+
+type ApiResponse = {
+  success: boolean;
+  message: string;
+  product: ApiProductDetails;
+};
+
+type ProductDetailsData = {
+  id: string;
+  title: string;
+  price: number;
+  discount?: number;
+  rating: number;
+  reviews: number;
+  image: string;
+  description: string;
+  brand: string;
+  packOf: string;
+  quantity: string;
+  type: string;
+  otherDetails: { label: string; value: string }[];
+  inStock: boolean;
+  stockCount: number;
 };
 
 export default function ProductDetails() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const route = useRoute<ProductDetailsRouteProp>();
   const { productId } = route.params;
-  const product = getProductDetails(productId);
+  const [product, setProduct] = useState<ProductDetailsData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
-  const originalPrice = product.discount
-    ? product.price / (1 - product.discount / 100)
-    : product.price;
+  // Fetch product details from API
+  const fetchProductDetails = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get<ApiResponse>(
+        `/product?productId=${productId}`
+      );
+
+      if (response.data.success && response.data.product) {
+        const apiProduct = response.data.product;
+        
+        // Map API response to ProductDetailsData type
+        const productDetails: ProductDetailsData = {
+          id: apiProduct._id,
+          title: apiProduct.name,
+          price: apiProduct.price,
+          rating: apiProduct.avgRating || 0,
+          reviews: apiProduct.ratingCount || 0,
+          image: apiProduct.image && apiProduct.image.length > 0 ? apiProduct.image[0] : "",
+          description: apiProduct.description,
+          brand: apiProduct.category || "Unknown",
+          packOf: "1 piece",
+          quantity: "1 unit",
+          type: apiProduct.category,
+          otherDetails: [
+            { label: "Category", value: apiProduct.category },
+            { label: "Stock", value: apiProduct.stock.toString() },
+          ],
+          inStock: apiProduct.stock > 0,
+          stockCount: apiProduct.stock,
+        };
+
+        setProduct(productDetails);
+      }
+    } catch (error: any) {
+      console.error("Error fetching product details:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "Failed to fetch product details"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProductDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId]);
 
   const handleAddToCart = () => {
     Toast.show({
@@ -103,17 +129,97 @@ export default function ProductDetails() {
     });
   };
 
-  const handleWishlist = () => {
-    setIsWishlisted(!isWishlisted);
-    Toast.show({
-      type: "success",
-      text1: isWishlisted ? "Product removed from wishlist" : "Product added to wishlist",
-    });
+  const handleWishlist = async () => {
+    if (!product) return;
+
+    try {
+      setWishlistLoading(true);
+
+      if (!isWishlisted) {
+        // Add to wishlist
+        const payload = {
+          items: [
+            {
+              productId: product.id,
+            },
+          ],
+        };
+
+        const response = await axiosInstance.post("/user/add-to-wishlist", payload);
+
+        if (response.data.success) {
+          setIsWishlisted(true);
+          Toast.show({
+            type: "success",
+            text1: "Product added to wishlist",
+          });
+        }
+      } else {
+        // Remove from wishlist
+        const payload = {
+          items: [
+            {
+              productId: product.id,
+            },
+          ],
+        };
+
+        const response = await axiosInstance.post("/user/delete-to-wishlist", payload);
+
+        if (response.data.success) {
+          setIsWishlisted(false);
+          Toast.show({
+            type: "success",
+            text1: "Product removed from wishlist",
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error("Error updating wishlist:", error);
+      Toast.show({
+        type: "error",
+        text1: error.response?.data?.message || "Failed to update wishlist",
+      });
+    } finally {
+      setWishlistLoading(false);
+    }
   };
 
   const toggleAccordion = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section);
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#7C3AED" />
+          <Text className="text-secondary-text text-sm mt-4">
+            Loading product details...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!product) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-normal-text text-lg font-semibold mb-2">
+            Product not found
+          </Text>
+          <Text className="text-secondary-text text-base text-center">
+            Unable to load product details. Please try again.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const originalPrice = product.discount
+    ? product.price / (1 - product.discount / 100)
+    : product.price;
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -132,7 +238,7 @@ export default function ProductDetails() {
         {/* Product Image */}
         <View className="w-full h-80 bg-gray-100 mb-4">
           <Image
-            source={product.image}
+            source={{ uri: product.image }}
             className="w-full h-full"
             resizeMode="contain"
           />
@@ -381,17 +487,25 @@ export default function ProductDetails() {
         <View className="flex-row gap-3">
           <TouchableOpacity
             onPress={handleWishlist}
+            disabled={wishlistLoading}
             className="w-14 h-14 rounded-xl border-2 border-gray-300 items-center justify-center"
             style={{
               borderColor: isWishlisted ? "#EC4899" : "#D1D5DB",
             }}
           >
-            <FontAwesome6
-              name="heart"
-              size={24}
-              color={isWishlisted ? "#EC4899" : "#6B7280"}
-              solid={isWishlisted}
-            />
+            {wishlistLoading ? (
+              <ActivityIndicator
+                size="small"
+                color={isWishlisted ? "#EC4899" : "#6B7280"}
+              />
+            ) : (
+              <FontAwesome6
+                name="heart"
+                size={24}
+                color={isWishlisted ? "#EC4899" : "#6B7280"}
+                solid={isWishlisted}
+              />
+            )}
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleAddToCart}
