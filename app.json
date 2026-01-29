@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "my-expo-app",
-    "slug": "my-expo-app",
-    "version": "1.0.0",
+    "name": "salim",
+   "slug": "my-expo-app",
+    "version": "1.0.1",
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
@@ -11,7 +11,15 @@
       "tsconfigPaths": true
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -30,9 +38,10 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.png",
-        "backgroundColor": "#7C3AED"
+        "backgroundColor": "#F8F7FC"
       },
-      "package": "com.anonymous.myexpoapp"
+      "package": "com.anonymous.myexpoapp",
+      "usesCleartextTraffic": true
     },
     "extra": {
       "eas": {

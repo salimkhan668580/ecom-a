@@ -2,9 +2,9 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
-// const BASE_URL = "http://43.204.250.254:4001"; //server url
+const BASE_URL = "http://43.204.250.254:4001"; //server url
 
-const BASE_URL = "http://192.168.0.122:3000"; //localhost url
+// const BASE_URL = "http://172.30.1.119:3000"; //localhost url
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -43,13 +43,18 @@ axiosInstance.interceptors.response.use(
   },
   async (error) => {
     const { response } = error;
-    console.log("❌", response?.status, response?.data);
-    if (response?.status === 401) {
-      await AsyncStorage.clear();
+    if (response) {
+      console.log("❌", response.status, response.data);
+      if (response.status === 401) {
+        await AsyncStorage.clear();
 
-      // 🔥 RN me window.location nahi hota
-      // Navigation yahan handle karna padega
-      // example: navigation.reset(...)
+        // 🔥 RN me window.location nahi hota
+        // Navigation yahan handle karna padega
+        // example: navigation.reset(...)
+      }
+    } else {
+      // Network error or no response
+      console.log("❌ Network Error:", error.message || "No response from server");
     }
 
     return Promise.reject(error);
